@@ -1,0 +1,23 @@
+{
+  "name": "cppn-tf-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8.11.0"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^0.2.3",
+    "argparse": "^1.0.10",
+    "canvas": "^2.3.1",
+    "express": "^4.16.4",
+    "fs": "0.0.1-security",
+    "jimp": "^0.6.0"
+  },
+  "scripts": {
+    "postinstall": "yarn upgrade --pattern @tensorflow"
+  },
+  "devDependencies": {
+    "clang-format": "~1.2.2"
+  }
+}
