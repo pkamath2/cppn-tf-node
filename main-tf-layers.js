@@ -32,8 +32,7 @@ function model(input_shape, n_output, with_bias) {
         kernelInitializer: new tf.initializers.randomNormal({ mean: 0.0, stddev: 2.0 }),
         biasInitializer: with_bias?new tf.initializers.randomNormal({ mean: 0.0, stddev: 2.0 }):null
     }).apply(dense);
-    var m = tf.model({ inputs: input, outputs: dense });
-    return m;
+    return tf.model({ inputs: input, outputs: dense });
 }
 
 function getImageArray() {
