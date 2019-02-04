@@ -1,3 +1,5 @@
+"use strict"
+
 const tf = require('@tensorflow/tfjs-node');
 const { createCanvas, createImageData } = require('canvas')
 const express = require('express')
@@ -5,15 +7,17 @@ const express = require('express')
 /**Express props */
 const port = 9997;
 /*Canvas props*/
-const height = 980;
-const width = 1000;
+const height = 1060;
+const width = 1080;
 
 /*ML props */
-const num_hidden_neurons = 32;
+const num_hidden_neurons = 64;
 const num_output = 3;
 const z_dim = 32; //Latent vec
+const config = {scale:0.3, activations:[tf.tanh, tf.tanh, gaussian, tf.tanh, tf.sigmoid, tf.sigmoid]};
 // const config = {scale:0.3, activations:[tf.tanh, tf.tanh, tf.tanh, tf.tanh, tf.sigmoid]};
-const config = {scale:0.3, activations:[tf.tanh,tf.tanh, tf.tanh, tf.tanh, gaussian]};//Colors look good.
+// const config = {scale:0.3, activations:[tf.tanh,tf.tanh, tf.tanh, tf.tanh, gaussian]};//Colors look good.
+// const config = {scale:0.01, activations:[tf.tanh,(d)=>tf.add(tf.mul(tf.mul(tf.sin(d),0.5), -0.25),0.2)]}; //TRIANGULAR
 // const config = {scale:1, activations:[tf.tanh, tf.softplus, tf.tanh, tf.softplus, (d)=>tf.add(tf.mul(tf.sin(d),0.5),0.5)]};
 // const config = {scale:0.01, activations:[tf.tanh, tf.tanh, tf.tanh, (d)=>tf.add(tf.mul(tf.sin(d),0.5),0.5)]};//Psychedelic colors.
 
@@ -22,6 +26,7 @@ const config = {scale:0.3, activations:[tf.tanh,tf.tanh, tf.tanh, tf.tanh, gauss
 // const config = {scale:0.0001, activations:[(d)=>tf.abs(tf.mul(tf.tanh(d),0.5))]};
 // const config = {scale:0.0001, activations:[gaussian]};
 // const config = {scale:0.0001, activations:[tf.sigmoid]};
+// const config = {scale:0.0001, activations:[tf.tanh,(d)=>tf.add(tf.mul(tf.mul(tf.sin(d),0.5), -0.25),0.2)]}; //TRIANGULAR
 
 function model(input_shape, n_output, with_bias) {
     const input = tf.input({ shape: [input_shape[0], input_shape[1]] })
@@ -47,7 +52,7 @@ function getImageArray() {
     t_y = t_y.flatten().reshape([height * width, 1])
 
     /*Initialize r*/
-    t_r = tf.sqrt(tf.add(tf.pow(t_x, 2), tf.pow(t_y, 2)));
+    let t_r = tf.sqrt(tf.add(tf.pow(t_x, 2), tf.pow(t_y, 2)));
     t_r = tf.transpose(t_r).flatten().reshape([height * width, 1])
 
     /*Initialize z*/
@@ -58,6 +63,9 @@ function getImageArray() {
 
     // t_x = tf.sin(tf.mul(t_x, 10)) //Repitition/Periodic
     // t_y = tf.sin(tf.mul(t_y, 10))
+
+    // t_x = tf.pow(t_x, 2);//Greater patterns
+    // t_y = tf.pow(t_y, 2);//Greater patterns
 
     t_x = model([height * width, 1], num_hidden_neurons, false).predict(t_x.reshape([1,t_x.shape[0], t_x.shape[1]]));
     t_y = model([height * width, 1], num_hidden_neurons, false).predict(t_y.reshape([1,t_y.shape[0], t_y.shape[1]]));
@@ -88,8 +96,8 @@ function main() {
         tf.toPixels(data).then((data_uint8) => {
             canvas.width = width;
             canvas.height = height;
-            ctx = canvas.getContext('2d');
-            imageData = createImageData(data_uint8, width, height);
+            var ctx = canvas.getContext('2d');
+            var imageData = createImageData(data_uint8, width, height);
             ctx.putImageData(imageData, 0, 0);
             const stream = canvas.createPNGStream();
             stream.pipe(res)
@@ -102,5 +110,8 @@ function main() {
 main();
 
 function gaussian(d){ //Assuming mean=0.0 and stddev=1.0
-    return tf.div(tf.pow(Math.E, tf.div(tf.pow(d,2),-2.0)),Math.sqrt(2*Math.PI));
+    var g_std_dev = 2.0;
+    var g_mean = 0.0;
+    return tf.div(tf.pow(Math.E, tf.div(tf.pow(tf.div(tf.sub(d, g_mean), g_std_dev),2),-2.0)),Math.sqrt(g_std_dev*2*Math.PI));
 }
+

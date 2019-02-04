@@ -62,14 +62,33 @@ class Genome{
             var node_i = this.node_gene_arr[i];
             for(var j=0;j<this.node_gene_arr.length;j++){
                 var node_j = this.node_gene_arr[j];
-                if(Math.random() > 0.4){
-                    if(!(node_j.name.indexOf('input')>-1) && node_j.innovation_number > node_i.innovation_number){
+                if(Math.random() > 0.4){ //Add output nodes only if there are some inputs.
+                    if(node_j.name.indexOf('input')==-1 && node_j.innovation_number > node_i.innovation_number){
                         var connection = this.addConnection(node_i.innovation_number, node_j.innovation_number);
                         if(node_j.name == 'output') connection.is_output_connection = true;
                         node_i.output_conn_arr.push(connection.innovation_number);
                         node_j.input_conn_arr.push(connection.innovation_number);
                     }
                 }
+            }
+
+            //0.0. If there are no inputs to a node, disable the node. Also disable all outgoing connections (if any). 
+            if(node_i.name.indexOf('hidden')>-1 && node_i.input_conn_arr.length==0) {
+                node_i.disabled = true;
+                var output_connections = node_i.output_conn_arr;
+                if(output_connections && output_connections.length>0){
+                    output_connections.forEach(conn_id => {
+                        var conn = this.connection_gene_map.get(conn_id);
+                        conn.disabled = true;
+                    });
+                }
+            }
+
+            //0.1. If the output node has no incoming connections, atleast feed it t_r.
+            if(node_i.name=='output' && node_i.input_conn_arr.length==0){
+                //TODO 
+                // var t_r =  this.node_gene_map.get()
+                // var connection = this.addConnection(node_i.innovation_number, node_j.innovation_number);
             }
         }
         // console.log(this.node_gene_arr)
@@ -81,27 +100,54 @@ class Genome{
         var connection_outputs_map = new Map();
         var result_node_id = 0;
 
+        //1. Iterate through all the nodes
         for(var i=0;i<this.node_gene_arr.length;i++){
             var curr_node = this.node_gene_arr[i];
+
+            if(curr_node.disabled){
+                continue;
+            }
+
             var input = null;
             if(curr_node.name.indexOf('input') > -1){
                 input = inputs[curr_node.name.substring('input_'.length)];
                 node_outputs_map.set(curr_node.innovation_number, curr_node.evaluate(input));
             }else{
-                var input_conn_arr = curr_node.input_conn_arr;
-                var connInput = null;//tricky
-                for(var j=0;j<input_conn_arr.length;j++){
-                    if(connInput == null) connInput = tf.zeros(connection_outputs_map.get(input_conn_arr[j]).shape);
-                    connInput = tf.add(connInput, connection_outputs_map.get(input_conn_arr[j]));
+                try {
+                    //2. Sum all the inputs
+                    var input_conn_arr = curr_node.input_conn_arr;
+                    var connInput = null;//tricky
+                    for(var j=0;j<input_conn_arr.length;j++){
+                        var connection = this.connection_gene_map.get(input_conn_arr[j]);
+                        if(connection.disabled){
+                            continue;
+                        }
+                        if(connInput == null) connInput = tf.zeros(connection_outputs_map.get(input_conn_arr[j]).shape);
+                        connInput = tf.add(connInput, connection_outputs_map.get(input_conn_arr[j]));
+                    }
+                    //3. Evaluate the node
+                    node_outputs_map.set(curr_node.innovation_number, curr_node.evaluate(connInput));
+                } catch (error) {
+                    console.log(curr_node)
+                    throw error;
                 }
-                node_outputs_map.set(curr_node.innovation_number, curr_node.evaluate(connInput));
+                
             }
             
+            //4. Calculate all the output connections.
             var output_conn_arr = curr_node.output_conn_arr;
             for(var j=0;j<output_conn_arr.length;j++){
-                var connection = this.connection_gene_map.get(output_conn_arr[j]);
-                var conn_output = connection.evaluate(node_outputs_map.get(curr_node.innovation_number), (connection.is_output_connection?this.final_output_size:this.init_num_hidden_neurons));
-                connection_outputs_map.set(connection.innovation_number, conn_output);
+                try {
+                    var connection = this.connection_gene_map.get(output_conn_arr[j]);
+                    if(connection.disabled){
+                        continue;
+                    }
+                    var conn_output = connection.evaluate(node_outputs_map.get(curr_node.innovation_number), (connection.is_output_connection?this.final_output_size:this.init_num_hidden_neurons));
+                    connection_outputs_map.set(connection.innovation_number, conn_output);
+                } catch (error) {
+                    console.log(curr_node)
+                    throw error;
+                }
             }
 
             if(curr_node.name.indexOf('output') > -1){

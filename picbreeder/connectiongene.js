@@ -4,7 +4,7 @@ const tf = require('@tensorflow/tfjs-node');
 const Gene = require('./gene');
 
 class ConnectionGene extends Gene{
-    constructor(innovation_number, weight_seed, from_node_id, to_node_id, is_active, is_output_connection){
+    constructor(innovation_number, weight_seed, from_node_id, to_node_id, is_active, is_output_connection, disabled){
         super();
         this.innovation_number = innovation_number;
         this.weight_seed = weight_seed;
@@ -12,6 +12,7 @@ class ConnectionGene extends Gene{
         this.to_node_id = to_node_id;
         this.is_active = is_active;
         this.is_output_connection = is_output_connection;
+        this.disabled = disabled;
     }
 
     evaluate(input, output_size, with_bias){
