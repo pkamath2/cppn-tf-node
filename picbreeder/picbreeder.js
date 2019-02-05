@@ -8,14 +8,14 @@ const Genome = require('./genome');
 /**Express props */
 const port = 9995;
 /*Thumbnail props*/
-const height = 150;
-const width = 170;
+const height = 120;
+const width = 136;
 /*Genome Props*/
-const num_hidden_neurons = 8;
-const num_output = 3;
-const z_dim = 8; //Latent vec
+let num_hidden_neurons = 8;
+let num_output = 1;
+let z_dim = 8; //Latent vec
 /*Montage props*/
-const montage_size = 16; //Always use a proper square
+const montage_size = 25; //Always use a proper square
 
 function main() {
     const app = express();
@@ -30,6 +30,19 @@ function main() {
     });
 
     app.get('/montage', function (req, res, next) {
+        console.log(req.query.color)
+        if(req.query.color == 'true') {
+            num_output = 3;
+        }else{
+            num_output = 1;
+        }
+        if(req.query.dense =='true') { 
+            num_hidden_neurons = 32; 
+            z_dim=32; 
+        }else{
+            num_hidden_neurons = 8; 
+            z_dim=8; 
+        }
         res.on('finish', () => { console.log('Response sent.') });
         let dataArr = [];
         for(var m_ind=0;m_ind<montage_size;m_ind++){
@@ -62,7 +75,8 @@ function main() {
             
             //Duplicated from Tensorflow array_ops.toPixels(). That method does not work with await.
             data = data.dataSync();
-            var bytes = new Uint8ClampedArray(width * height * 4);
+            // var bytes = new Uint8ClampedArray(width * height * 4);
+            var bytes = new Array(width * height * 4);
             var r,g,b,a,j,i;
             for (i = 0; i < height * width; ++i) {
                 r = void 0, g = void 0, b = void 0, a = void 0;
@@ -85,16 +99,18 @@ function main() {
             dataArr.push(bytes);
         }
 
-        var count = 0;
-        for(var i=0;i<Math.sqrt(montage_size);i++){
-            for(var j=0;j<Math.sqrt(montage_size);j++){
-                var imageData = createImageData(dataArr[count], width, height);
-                ctx.putImageData(imageData, width*i, height*j);
-                count++;
-            }
-        }
-        const stream = canvas.createPNGStream();
-        stream.pipe(res);
+        // var count = 0;
+        // for(var i=0;i<Math.sqrt(montage_size);i++){
+        //     for(var j=0;j<Math.sqrt(montage_size);j++){
+        //         var imageData = createImageData(dataArr[count], width, height);
+        //         ctx.putImageData(imageData, width*i, height*j);
+        //         count++;
+        //     }
+        // }
+        // const stream = canvas.createPNGStream();
+        // stream.pipe(res);
+
+        res.send(dataArr);
     });
 }
 main();
