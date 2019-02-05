@@ -7,7 +7,7 @@ const Genome = require('./genome');
 
 /**Express props */
 const port = 9995;
-/*Canvas props*/
+/*Thumbnail props*/
 const height = 150;
 const width = 170;
 /*Genome Props*/
@@ -24,13 +24,12 @@ function main() {
     canvas.width = width*Math.sqrt(montage_size);
     canvas.height = height*Math.sqrt(montage_size);
     var ctx = canvas.getContext('2d');
-
-    canvas.addEventListener('click', function(event) {
-        console.log(event.region)
-    });
     
-
     app.get('/', function (req, res, next) {
+        res.sendFile(__dirname+'/views/index.html');
+    });
+
+    app.get('/montage', function (req, res, next) {
         res.on('finish', () => { console.log('Response sent.') });
         let dataArr = [];
         for(var m_ind=0;m_ind<montage_size;m_ind++){
@@ -57,7 +56,7 @@ function main() {
             
             var genome = new Genome(1, num_output, num_hidden_neurons);
             genome.initialNetwork(); 
-            var data = genome.evaluate([t_x, t_y, t_r, t_z]);console.log(data.shape)
+            var data = genome.evaluate([t_x, t_y, t_r, t_z]);
             if(num_output==3) data = data.reshape([data.shape[0]*3])//RGB Channels
 
             
@@ -91,7 +90,6 @@ function main() {
             for(var j=0;j<Math.sqrt(montage_size);j++){
                 var imageData = createImageData(dataArr[count], width, height);
                 ctx.putImageData(imageData, width*i, height*j);
-                ctx.addHitRegion({id: i+"-"+j});
                 count++;
             }
         }
