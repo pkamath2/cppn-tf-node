@@ -26,6 +26,8 @@
         const thumbnail_width = 136;
 
         let thumbnail_position_map = new Map();
+        let thumbnail_nodegene_map = new Map();
+        let thumbnail_connectiongene_map = new Map();
         let selected_thumbnails = [];
         let colorCheck = false;
         let denseCheck = false;
@@ -37,19 +39,21 @@
             denseCheck = $('#dense-check')[0].checked;
 
             $.ajax({url:'/montage?color='+colorCheck+'&dense='+denseCheck})
-                .done((data) => {
+                .done((response) => {
                    let canvas = $("#montage")[0];
                    let ctx = canvas.getContext('2d');
                    let count = 0;
                    for(var i=0;i<Math.sqrt(montage_size);i++){
                         for(var j=0;j<Math.sqrt(montage_size);j++){
-                            var image = new ImageData(Uint8ClampedArray.from(data[count]), thumbnail_width, thumbnail_height);
+                            var image = new ImageData(Uint8ClampedArray.from(response[count].data), thumbnail_width, thumbnail_height);
                             ctx.putImageData(image, thumbnail_width*i, thumbnail_height*j);
                             ctx.fillText(i+"_"+j, thumbnail_width*i+10, thumbnail_height*j+10);//TODO: Remove later. 
                             ctx.strokeStyle = '#fbfaf6';
                             ctx.lineWidth = 4;
                             ctx.strokeRect(thumbnail_width*i, thumbnail_height*j, thumbnail_width, thumbnail_height);
                             thumbnail_position_map.set(i+"_"+j, [thumbnail_width*i, thumbnail_height*j]); 
+                            thumbnail_nodegene_map.set(i+"_"+j, response[count].node_genes);
+                            thumbnail_connectiongene_map.set(i+"_"+j, response[count].connection_genes);
                             count++;
                         }
                     }
@@ -83,6 +87,12 @@
             console.log(selected_thumbnails)
         }
 
+        function mutate(){
+            selected_thumbnails.forEach((id) => {
+                //TODO
+            })
+        }
+
         function load_page(){
             load_montage(false, false);
 
@@ -91,6 +101,10 @@
             });
             $('#refresh').click(() => {
                 load_montage();
+            });
+
+            $("mutate").click(() => {
+                mutate();
             });
 
             let canvas = $("#montage")[0];

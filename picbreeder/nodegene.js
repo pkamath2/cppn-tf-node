@@ -2,6 +2,7 @@
 
 const tf = require('@tensorflow/tfjs-node');
 const Gene = require('./gene');
+const activationutil = require('./activationsutil');
 
 class NodeGene extends Gene{
     constructor(innovation_number, name, activation, hidden, input_conn_arr, output_conn_arr, disabled){
@@ -24,7 +25,7 @@ class NodeGene extends Gene{
     }
 
     evaluate(input){
-        return this.activation(input);
+        return activationutil.enum_activations[this.activation](input);
     }
 }
 module.exports = NodeGene;

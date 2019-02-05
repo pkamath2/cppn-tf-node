@@ -19,7 +19,7 @@ const montage_size = 25; //Always use a proper square
 
 function main() {
     const app = express();
-    app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+    app.listen(process.env.PORT || port, () => console.log(`Example app listening on port ${port}!`));
     const canvas = createCanvas(width*Math.sqrt(montage_size), height*Math.sqrt(montage_size));
     canvas.width = width*Math.sqrt(montage_size);
     canvas.height = height*Math.sqrt(montage_size);
@@ -37,11 +37,11 @@ function main() {
             num_output = 1;
         }
         if(req.query.dense =='true') { 
-            num_hidden_neurons = 32; 
+            num_hidden_neurons = 64; 
             z_dim=32; 
         }else{
-            num_hidden_neurons = 8; 
-            z_dim=8; 
+            num_hidden_neurons = 32; 
+            z_dim=16; 
         }
         res.on('finish', () => { console.log('Response sent.') });
         let dataArr = [];
@@ -69,14 +69,16 @@ function main() {
             
             var genome = new Genome(1, num_output, num_hidden_neurons);
             genome.initialNetwork(); 
-            var data = genome.evaluate([t_x, t_y, t_r, t_z]);
+            var outputs = genome.evaluate([t_x, t_y, t_r, t_z]);
+            var node_genes = outputs.node_genes;
+            var connection_genes = outputs.connection_genes;
+            var data = outputs.output;
             if(num_output==3) data = data.reshape([data.shape[0]*3])//RGB Channels
 
             
             //Duplicated from Tensorflow array_ops.toPixels(). That method does not work with await.
             data = data.dataSync();
-            // var bytes = new Uint8ClampedArray(width * height * 4);
-            var bytes = new Array(width * height * 4);
+            var bytes = new Array(width * height * 4); //Convert to Uint8 array on the UI
             var r,g,b,a,j,i;
             for (i = 0; i < height * width; ++i) {
                 r = void 0, g = void 0, b = void 0, a = void 0;
@@ -96,20 +98,8 @@ function main() {
                 bytes[j + 2] = Math.round(b);
                 bytes[j + 3] = Math.round(a);
             }
-            dataArr.push(bytes);
+            dataArr.push({data:bytes, node_genes:node_genes, connection_genes:connection_genes});
         }
-
-        // var count = 0;
-        // for(var i=0;i<Math.sqrt(montage_size);i++){
-        //     for(var j=0;j<Math.sqrt(montage_size);j++){
-        //         var imageData = createImageData(dataArr[count], width, height);
-        //         ctx.putImageData(imageData, width*i, height*j);
-        //         count++;
-        //     }
-        // }
-        // const stream = canvas.createPNGStream();
-        // stream.pipe(res);
-
         res.send(dataArr);
     });
 }

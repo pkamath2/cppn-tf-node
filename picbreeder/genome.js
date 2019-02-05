@@ -63,7 +63,10 @@ class Genome{
             for(var j=0;j<this.node_gene_arr.length;j++){
                 var node_j = this.node_gene_arr[j];
                 if(Math.random() > 0.4){ //Add output nodes only if there are some inputs.
-                    if(node_j.name.indexOf('input')==-1 && node_j.innovation_number > node_i.innovation_number){
+                    if(node_i.name.indexOf('input') > -1 && node_j.name.indexOf('input') > -1){
+                        continue;//Do not connect input to input
+                    }
+                    if(node_j.innovation_number > node_i.innovation_number){
                         var connection = this.addConnection(node_i.innovation_number, node_j.innovation_number);
                         if(node_j.name == 'output') connection.is_output_connection = true;
                         node_i.output_conn_arr.push(connection.innovation_number);
@@ -154,7 +157,7 @@ class Genome{
                 result_node_id = curr_node.innovation_number;
             }
         }
-        return node_outputs_map.get(result_node_id);
+        return {output:node_outputs_map.get(result_node_id), node_genes: this.node_gene_arr, connection_genes: this.connection_gene_arr};
     }
 }
 module.exports = Genome;
