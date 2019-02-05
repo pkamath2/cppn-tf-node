@@ -15,7 +15,7 @@
     "jimp": "^0.6.0"
   },
   "scripts": {
-    "postinstall": "yarn upgrade --pattern @tensorflow"
+    "start": "npm rebuild @tensorflow/tfjs-node && node picbreeder/picbreeder.js"
   },
   "devDependencies": {
     "clang-format": "~1.2.2"
